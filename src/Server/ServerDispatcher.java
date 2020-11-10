@@ -29,53 +29,29 @@ public class ServerDispatcher implements Runnable {
 
             while(!socket.isClosed()){
                 if(dataOutputStream != null){
-                    String operacion="";
-                    int a = 0, b=0, resp = 0;
-                    Operaciones op = new Operaciones();
+                    String action="";
+                    int ammount = 0;
 
-                    operacion = dataInputStream.readUTF();
-                    System.out.println("Mensaje recibido " + operacion);
-                    //dataOutputStream.writeChars("Introduzca el primer valor\n");
+                    action = dataInputStream.readUTF();
+                    System.out.println("Operation request: " + action);
 
-                    a = dataInputStream.readInt();
-                    System.out.println("Primer operando recibido: " + a);
+                    ammount = dataInputStream.readInt();
+                    System.out.println(": " + a);
 
-                    //dataOutputStream.writeChars("Introduzca el segundo valor\n");
-                    b = dataInputStream.readInt();
-                    System.out.println("Segundo operando recibido: " + b);
-                    switch (operacion) {
-                        case "+":
-                            resp = operaciones.sumaNumeros(a, b);
-                            break;
-                        case "-":
-                            resp = operaciones.restaNumeros(a, b);
-                            break;
-                        case "*":
-                            resp = operaciones.multNumeros(a, b);
-                            break;
-                        case "/":
-                            resp = operaciones.divNumeros(a, b);
-                            break;
-                        case "%":
-                            resp = operaciones.modNumeros(a, b);
-                            break;
-                        default:
-                            resp = -1000;
-                            System.out.println("Invalid operation!");
+                    switch (action) {
+                        case "withdraw" -> sharedAccount.withdraw(ammount);
+                        case "deposit" -> sharedAccount.deposit(ammount);
+                        default -> {
+                            System.out.println("Bank account: Invalid operation!");
+                        }
                     }
-                    System.out.println("Resultado es " + resp);
-                    dataOutputStream.writeInt(resp);
-                    //dataOutputStream.writeChars("Resultado es " + resp+"\n");
+                    System.out.println("Bank account: final balance" + sharedAccount.getBalance());
                     dataOutputStream.flush();
-
                 }
-
-
             }
         } catch (IOException e) {
             System.out.println("Connection closed: " + socket.getRemoteSocketAddress());
             server.closeClient();
-            System.out.println(server.clientConnected);
         }
 
     }

@@ -30,7 +30,8 @@ public class NotificationService implements Runnable {
                     notificationInputStream = new DataInputStream(notificationSocket.getInputStream());
                     notificationOutputStream = new DataOutputStream(notificationSocket.getOutputStream());
                     System.out.println("New client asking for server availability from: " + notificationSocket.getRemoteSocketAddress());
-                    notificationOutputStream.writeBoolean(this.server.clientConnected < this.server.MAX_CLIENTS_CONNECTED);
+                    notificationOutputStream.writeBoolean(this.server.getCurrentConnections() < this.server.getMaxClientConnected());
+                    notificationOutputStream.writeBoolean(this.server.getServerHandledStatus());
                 } catch (IOException ex) {
                     System.out.println("Accept failed on port: " + NOTIFICATION_PORT);
                 }

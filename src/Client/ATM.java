@@ -17,40 +17,66 @@ public class ATM implements Runnable {
     private final int DATA_PORT = 1026;
     private DataInputStream disNotification, disData;
     private DataOutputStream dosNotification, dosData;
-
+    private final int timeOut = 10;
     public int operation;
+    private String id;
 
+    public ATM(String id) {
+        this.id = id;
+    }
+
+    public String getId() {
+        return this.id;
+    }
+
+    // Thread entry point
     @Override
     public void run() {
         try {
-            if(connectToServer()) {
-                for (int i = 0; i < TRANSACTIONS; i++) {
-                    operation = ThreadLocalRandom.current().nextInt(0, 2);
-                    switch (operation) {
-                        case 0:
-                            withdraw = ThreadLocalRandom.current().nextDouble(5, 21);
-                            withdraw(withdraw);
-                            break;
-                        case 1:
-                            deposit = ThreadLocalRandom.current().nextDouble(5, 21);
-                            deposit(deposit);
-                            break;
-                    }
-                    try {
-                        Thread.sleep(500);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+            if(connectToServer() == 1) {
+                makeRequest();
             } else {
-                // Log to file
+                // Timeout for avoid infinite wait
+                System.out.println(
+                        this.id +
+                        " : Server isn't free or is handling by a client" +
+                                "\nWaiting for connection ..."
+                );
+
+                // Asks each second if the server
+                for(int i = 0; i < this.timeOut; i++) {
+                    if(connectToServer() == 1) {
+                        System.out.println(this.id + ": Server is free!");
+                        makeRequest();
+                        break;
+                    } else System.out.println(this.id + ": Server still handled!");
+                    Thread.sleep(1000);
+                }
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
     }
 
+    // Calls the withdraw and deposit methods
+    private void makeRequest() {
+        for (int i = 0; i < TRANSACTIONS; i++) {
+            operation = ThreadLocalRandom.current().nextInt(0, 2);
+            switch (operation) {
+                case 0 -> {
+                    withdraw = ThreadLocalRandom.current().nextDouble(5, 21);
+                    withdraw(withdraw);
+                }
+                case 1 -> {
+                    deposit = ThreadLocalRandom.current().nextDouble(5, 21);
+                    deposit(deposit);
+                }
+            }
+        }
+    }
+
+    // Withdraws money
     private synchronized void withdraw(double withdraw) {
         if (account.getBalance() >= withdraw) {
             System.out.printf("> Balance: $%.2f\n", account.getBalance());
@@ -68,6 +94,7 @@ public class ATM implements Runnable {
         notifyAll();
     }
 
+    // Deposits money
     private synchronized void deposit(double deposit) {
         System.out.printf("> Balance: $%.2f\n", account.getBalance());
         account.deposit(deposit);
@@ -76,7 +103,8 @@ public class ATM implements Runnable {
         notifyAll();
     }
 
-    private boolean connectToServer() throws IOException {
+    // Sets the sockets
+    private int connectToServer() throws IOException {
             // Notification socket: for check if the server is free
             notificationSocket = new Socket("127.0.0.1", NOTIFICATION_PORT);
             disNotification = new DataInputStream(notificationSocket.getInputStream());
@@ -91,12 +119,13 @@ public class ATM implements Runnable {
                     dataSocket = new Socket("127.0.0.1", DATA_PORT);
                     disData = new DataInputStream(dataSocket.getInputStream());
                     dosData = new DataOutputStream(dataSocket.getOutputStream());
-                    System.out.println("Data socket connected!");
-                    return true;
+                    System.out.println(this.id + ": Data socket connected!");
+                    return 1; // Server free and isn't handled
                 } else {
-                    System.out.println("A client is handling the account");
+                    System.out.println(this.id + ": A client is handling the account");
+                    return -2; // Server is handled
                 }
-            } else return false;
+            } else return -3; // Server isn't free
     }
 
 }

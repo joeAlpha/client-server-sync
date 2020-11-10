@@ -6,18 +6,39 @@ import java.net.Socket;
 
 // Driver class
 public class Server {
-    final int MAX_CLIENTS_CONNECTED = 3;
-    final int PORT = 1026;
-    int clientConnected;
-    ServerSocket serverSocket;
+    private final int MAX_CLIENTS_CONNECTED = 3;
+    private final int PORT = 1026;
+    private int currentConnections;
+    private ServerSocket serverSocket;
+    private boolean serverIsHandled;
 
     public static void main(String args[]) {
         Server server = new Server();
         server.startServer();
     }
 
+    // Getters
+    public void changeServerHandledStatus(boolean newStatus) {
+        this.serverIsHandled = newStatus;
+    }
+
+    public int getCurrentConnections() {
+        return this.currentConnections;
+    }
+
+    public int getMaxClientConnected() {
+        return this.MAX_CLIENTS_CONNECTED;
+    }
+
+
+    // Methods
     public void closeClient() {
-        clientConnected -= 1;
+        currentConnections -= 1;
+    }
+
+
+    public boolean getServerHandledStatus() {
+        return this.serverIsHandled;
     }
 
     private void startServer() {
@@ -40,7 +61,7 @@ public class Server {
 
             // While there are less than 3 clients using the server
             // another one can use it.
-            if(clientConnected < MAX_CLIENTS_CONNECTED) {
+            if(currentConnections < MAX_CLIENTS_CONNECTED) {
                 try {
                     Socket socket = serverSocket.accept();
                     System.out.println("Client connected from: " + socket.getRemoteSocketAddress());
@@ -49,8 +70,8 @@ public class Server {
                     ServerDispatcher serverDispatcher = new ServerDispatcher(this, socket);
                     Thread thread = new Thread(serverDispatcher);
                     thread.start();
-                    clientConnected++;
-                    System.out.println("Current clients connected: " + clientConnected);
+                    currentConnections++;
+                    System.out.println("Current clients connected: " + currentConnections);
                 } catch (IOException ex) {
                     System.out.println("Accept failed on port: " + PORT);
                 }

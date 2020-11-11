@@ -52,6 +52,9 @@ public class ATM implements Runnable {
                     } else System.out.println(this.id + ": Server still handled!");
                     Thread.sleep(1000);
                 }
+
+                System.out.printf("%s: timeout reached, thread finished.", this.id);
+                Thread.currentThread().interrupt();
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -60,7 +63,7 @@ public class ATM implements Runnable {
     }
 
     // Calls the withdraw and deposit methods
-    private void makeRequest() {
+    private void makeRequest() throws IOException {
         for (int i = 0; i < TRANSACTIONS; i++) {
             operation = ThreadLocalRandom.current().nextInt(0, 2);
             switch (operation) {
@@ -72,35 +75,39 @@ public class ATM implements Runnable {
                     deposit = ThreadLocalRandom.current().nextDouble(5, 21);
                     deposit(deposit);
                 }
+                default -> throw new IllegalStateException(this.id + ": Unexpected value: " + operation);
             }
         }
     }
 
     // Withdraws money
-    private synchronized void withdraw(double withdraw) {
-        if (account.getBalance() >= withdraw) {
-            System.out.printf("> Balance: $%.2f\n", account.getBalance());
-            account.withdraw(withdraw);
-            System.out.printf("> User: %s witdraw $%.2f\n> New balance: $%.2f\n\n", Thread.currentThread().getName(),
-                    withdraw, account.getBalance());
+    private synchronized void withdraw(double withdraw) throws IOException {
+        // Read balance
+        double currentBalance = disData.readDouble();
+        
+        if (currentBalance >= withdraw) {
+            System.out.printf("%s: Balance: $%.2f\n", this.id, currentBalance);
+
+            // Sends the operation and the ammount to the server dispatcher
+            dosData.writeUTF("withdraw");
+            dosData.writeDouble(withdraw);
+
+            // Response
+            System.out.println(disData.readUTF());
         } else {
-            System.out.printf("The balance isn't enough to withdraw\n");
-            try {
-                wait();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            System.out.printf("%s: The balance isn't enough to withdraw\n", this.id);
         }
-        notifyAll();
     }
 
     // Deposits money
-    private synchronized void deposit(double deposit) {
-        System.out.printf("> Balance: $%.2f\n", account.getBalance());
-        account.deposit(deposit);
-        System.out.printf("> User: %s deposit $%.2f\n> New balance: $%.2f\n\n", Thread.currentThread().getName(),
-                deposit, account.getBalance());
-        notifyAll();
+    private synchronized void deposit(double deposit) throws IOException {
+        // Read balance
+        double currentBalance = disData.readDouble();
+
+        // Sends the operation and the ammount to the server dispatcher
+        dosData.writeUTF("deposit");
+        dosData.writeDouble(deposit);
+        System.out.println(disData.readUTF());
     }
 
     // Sets the sockets

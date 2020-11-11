@@ -28,29 +28,51 @@ public class ServerDispatcher implements Runnable {
             dataInputStream = new DataInputStream(socket.getInputStream());
 
             while(!socket.isClosed()){
-                if(dataOutputStream != null){
+                if(!this.sharedAccount.getHandledStatus()){
+
+                    // Blocks the resource
+                    this.sharedAccount.setHandledStatus(false);
+                    dataOutputStream.writeDouble(this.sharedAccount.getBalance());
                     String action="";
-                    int ammount = 0;
+                    double ammount = 0;
 
                     action = dataInputStream.readUTF();
-                    System.out.println("Operation request: " + action);
+                    dataOutputStream.writeUTF("SERVER: Operation request: " + action);
 
-                    ammount = dataInputStream.readInt();
-                    System.out.println(": " + a);
+                    ammount = dataInputStream.readDouble();
+                    System.out.println(": " + ammount);
 
                     switch (action) {
-                        case "withdraw" -> sharedAccount.withdraw(ammount);
-                        case "deposit" -> sharedAccount.deposit(ammount);
+                        case "withdraw" -> {
+                            sharedAccount.withdraw(ammount);
+                            dataOutputStream.writeUTF(
+                                    "SERVER: $" + ammount + " withdrawn. " +
+                                            "\nFinal balance: $" + sharedAccount.getBalance()
+                                            );
+                        }
+                        case "deposit" -> {
+                            sharedAccount.deposit(ammount);
+                            dataOutputStream.writeUTF(
+                                    "SERVER: $" + ammount + " deposited. " +
+                                            "\nFinal balance: $" + sharedAccount.getBalance()
+                            );
+                        }
                         default -> {
-                            System.out.println("Bank account: Invalid operation!");
+                            dataOutputStream.writeUTF("SERVER: Bank account: Invalid operation!");
                         }
                     }
-                    System.out.println("Bank account: final balance" + sharedAccount.getBalance());
                     dataOutputStream.flush();
+
+                    // Release the resource and notifies
+                    this.sharedAccount.setHandledStatus(true);
+                    notifyAll();
+                } else {
+                    dataOutputStream.writeUTF("SERVER: server busy, the client will try to connect in the next 10 seconds ...");
+                    wait();
                 }
             }
-        } catch (IOException e) {
-            System.out.println("Connection closed: " + socket.getRemoteSocketAddress());
+        } catch (IOException | InterruptedException e) {
+            System.out.println("SERVER: Connection closed: " + socket.getRemoteSocketAddress());
             server.closeClient();
         }
 

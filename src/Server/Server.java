@@ -32,7 +32,7 @@ public class Server {
         try {
             serverSocket = new ServerSocket(PORT);
             acceptClients(serverSocket);
-        } catch (IOException e){
+        } catch (IOException e) {
             System.err.println("Couldn't listen on port: " + PORT);
             System.exit(1);
         }
@@ -41,7 +41,7 @@ public class Server {
     private void acceptClients(ServerSocket serverSocket) {
         System.out.println("Server starts port = " + serverSocket.getLocalSocketAddress());
 
-        while(true) {
+        while (true) {
             try {
                 Socket socket = serverSocket.accept();
                 dataInputStream = new DataInputStream(socket.getInputStream());
@@ -50,9 +50,10 @@ public class Server {
 
                 // Go to the queue's executor
                 Future<String> taskResult = executorService.submit(new ClientRequest(
-                    sharedAccount,
-                    dataInputStream.readUTF(),
-                    dataInputStream.readDouble()
+                        sharedAccount,
+                        dataInputStream.readUTF(),
+                        dataInputStream.readUTF(),
+                        dataInputStream.readDouble()
                 ));
 
                 String result = "-";

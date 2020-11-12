@@ -13,8 +13,8 @@ public class ATM implements Runnable {
     public double deposit, withdraw;
     private Socket dataSocket;
     private final int DATA_PORT = 1026;
-    private DataInputStream disData;
-    private DataOutputStream dosData;
+    private DataInputStream dataInputStream;
+    private DataOutputStream dataOutputStream;
     public int operation;
     private String id;
 
@@ -36,10 +36,12 @@ public class ATM implements Runnable {
     public void run() {
         try {
             if (connectToServer()) {
-                Thread timer = new Thread(this);
-                timer.start();
-                makeRequest();
-                timer.interrupt();
+                while(true) {
+                    Thread timer = new Thread(this);
+                    timer.start();
+                    makeRequest();
+                    timer.interrupt();
+                }
             } else System.out.println(this.id + " : Error setting up the socket with the server");
         } catch (IOException e) {
             e.printStackTrace();
@@ -49,45 +51,45 @@ public class ATM implements Runnable {
 
     // Calls the withdraw and deposit methods
     private synchronized void makeRequest() throws IOException {
-        for (int i = 0; i < TRANSACTIONS; i++) {
-            operation = ThreadLocalRandom.current().nextInt(0, 2);
-            switch (operation) {
-                case 0 -> {
-                    withdraw = ThreadLocalRandom.current().nextDouble(5, 21);
-                    withdraw(withdraw);
-                }
-                case 1 -> {
-                    deposit = ThreadLocalRandom.current().nextDouble(5, 21);
-                    deposit(deposit);
-                }
-                default -> throw new IllegalStateException(this.id + ": Unexpected value: " + operation);
+        operation = ThreadLocalRandom.current().nextInt(0, 2);
+        switch (operation) {
+            case 0 -> {
+                withdraw = ThreadLocalRandom.current().nextDouble(5, 21);
+                withdraw(withdraw);
             }
+            case 1 -> {
+                deposit = ThreadLocalRandom.current().nextDouble(5, 21);
+                deposit(deposit);
+            }
+            default -> throw new IllegalStateException(this.id + ": Unexpected value: " + operation);
         }
     }
 
     // Withdraws money
     private synchronized void withdraw(double withdraw) throws IOException {
         // Sends the operation and the ammount to the server dispatcher
-        dosData.writeUTF("withdraw");
-        dosData.writeDouble(withdraw);
+        dataOutputStream.writeUTF(this.id);
+        dataOutputStream.writeUTF("withdraw");
+        dataOutputStream.writeDouble(withdraw);
 
         // Response
-        System.out.println(disData.readUTF());
+        System.out.println(dataInputStream.readUTF());
     }
 
     // Deposits money
     private synchronized void deposit(double deposit) throws IOException {
         // Sends the operation and the ammount to the server dispatcher
-        dosData.writeUTF("deposit");
-        dosData.writeDouble(deposit);
-        System.out.println(disData.readUTF());
+        dataOutputStream.writeUTF(this.id);
+        dataOutputStream.writeUTF("deposit");
+        dataOutputStream.writeDouble(deposit);
+        System.out.println(dataInputStream.readUTF());
     }
 
     // Sets the sockets
     private synchronized boolean connectToServer() throws IOException {
         dataSocket = new Socket("127.0.0.1", DATA_PORT);
-        disData = new DataInputStream(dataSocket.getInputStream());
-        dosData = new DataOutputStream(dataSocket.getOutputStream());
+        dataInputStream = new DataInputStream(dataSocket.getInputStream());
+        dataOutputStream = new DataOutputStream(dataSocket.getOutputStream());
         System.out.println(this.id + ": Data socket connected!");
         return true; // Server free and isn't handled
     }

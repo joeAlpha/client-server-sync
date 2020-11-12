@@ -1,52 +1,35 @@
 package Server;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.*;
 
 // Driver class
 public class Server {
-    private final int MAX_CLIENTS_CONNECTED = 3;
     private final int PORT = 1026;
-    private int currentConnections;
     private ServerSocket serverSocket;
-    private boolean serverIsHandled;
+    private ExecutorService executorService;
+    private DataOutputStream dataOutputStream;
+    private DataInputStream dataInputStream;
+    private BankAccount sharedAccount;
 
     public static void main(String args[]) {
         Server server = new Server();
         server.startServer();
     }
 
-    // Getters
-    public void changeServerHandledStatus(boolean newStatus) {
-        this.serverIsHandled = newStatus;
-    }
-
-    public int getCurrentConnections() {
-        return this.currentConnections;
-    }
-
-    public int getMaxClientConnected() {
-        return this.MAX_CLIENTS_CONNECTED;
-    }
-
-
-    // Methods
-    public void closeClient() {
-        currentConnections -= 1;
-    }
-
-
-    public boolean getServerHandledStatus() {
-        return this.serverIsHandled;
-    }
-
     private void startServer() {
+        sharedAccount = new BankAccount();
         serverSocket = null;
-        try {
-            Thread notificationService = new Thread(new NotificationService(this));
-            notificationService.start();
 
+        // Only one thread will be letting the access to the shared
+        // account
+        executorService = Executors.newSingleThreadExecutor();
+
+        try {
             serverSocket = new ServerSocket(PORT);
             acceptClients(serverSocket);
         } catch (IOException e){
@@ -57,26 +40,33 @@ public class Server {
 
     private void acceptClients(ServerSocket serverSocket) {
         System.out.println("Server starts port = " + serverSocket.getLocalSocketAddress());
+
         while(true) {
+            try {
+                Socket socket = serverSocket.accept();
+                dataInputStream = new DataInputStream(socket.getInputStream());
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
+                System.out.println("ATM accesing from: " + socket.getRemoteSocketAddress());
 
-            // While there are less than 3 clients using the server
-            // another one can use it.
-            if(currentConnections < MAX_CLIENTS_CONNECTED) {
+                // Go to the queue's executor
+                Future<String> taskResult = executorService.submit(new ClientRequest(
+                    sharedAccount,
+                    dataInputStream.readUTF(),
+                    dataInputStream.readDouble()
+                ));
+
+                String result = "-";
+
                 try {
-                    Socket socket = serverSocket.accept();
-                    System.out.println("Client connected from: " + socket.getRemoteSocketAddress());
-
-                    // Server thread who dispatch client's connection
-                    ServerDispatcher serverDispatcher = new ServerDispatcher(this, socket);
-                    Thread thread = new Thread(serverDispatcher);
-                    thread.start();
-                    currentConnections++;
-                    System.out.println("Current clients connected: " + currentConnections);
-                } catch (IOException ex) {
-                    System.out.println("Accept failed on port: " + PORT);
+                    result = taskResult.get(15, TimeUnit.SECONDS);
+                } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                    System.out.println("Time out reached!");
+                } finally {
+                    dataOutputStream.writeUTF(result);
                 }
-            } else {
-                System.out.print("");
+
+            } catch (IOException ex) {
+                System.out.println("ATM connection rejected on port: " + PORT);
             }
         }
     }

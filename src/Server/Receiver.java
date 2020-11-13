@@ -22,9 +22,11 @@ public class Receiver implements Runnable {
         this.executorService = executorService;
     }
 
-    public String getName() { return this.name; }
+    public synchronized String getName() {
+        return this.name;
+    }
 
-    public String getTime() {
+    public synchronized String getTime() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
         return "[" + dtf.format(now) + "]";
@@ -32,7 +34,7 @@ public class Receiver implements Runnable {
 
     @Override
     public void run() {
-        System.out.println(getTime()+ ": " + getName() + " start listening");
+        System.out.println(getTime() + ": " + getName() + " listening!");
         while (true) {
             try {
                 Socket firstSocket = serverSocket.accept();
@@ -42,33 +44,30 @@ public class Receiver implements Runnable {
                 String operation = dis.readUTF();
                 double ammount = dis.readDouble();
 
+
                 ClientRequest request = new ClientRequest(
                         sharedAccount,
                         atm,
                         operation,
                         ammount
                 );
-                System.out.println(getTime() + ": Request from " +
-                        atm +
-                        " -> " +
-                        getName()
-                );
 
                 // Go to the queue's executor
                 Future<String> taskResult = executorService.submit(request);
+                //System.out.println(getTime() + ": " + operation + " request has been enque from " + atm);
 
-                String result = "-";
+                String result = "timeout!";
 
                 try {
-                    result = taskResult.get(15, TimeUnit.SECONDS);
+                    result = taskResult.get(5, TimeUnit.SECONDS);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {
-                    System.out.println(getTime()+ ": " + "Time out reached!");
+                    System.out.println(getTime() + ": " + "Time out reached for " + atm + " request!");
                 } finally {
                     dos.writeUTF(result);
                 }
 
             } catch (IOException ex) {
-                System.out.println(getTime()+ ": " + "ATM connection rejected on port: " + serverSocket.getLocalPort());
+                System.out.println(getTime() + ": " + "ATM connection rejected on port: " + serverSocket.getLocalPort());
             }
         }
     }

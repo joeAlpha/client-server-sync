@@ -23,11 +23,6 @@ public class ClientRequest implements Callable<String> {
 
     }
 
-    public String getTime() {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-        LocalDateTime now = LocalDateTime.now();
-        return "[" + dtf.format(now) + "]";
-    }
 
     public String getATM() {
         return this.ATM;
@@ -39,19 +34,20 @@ public class ClientRequest implements Callable<String> {
 
     @Override
     public String call() throws Exception {
-        operationDetails += getTime() + "\nInitial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
+        operationDetails += "Initial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
+        String operationTime;
 
         switch (operation) {
             case "withdraw" -> {
                 if (sharedAccount.getBalance() > ammount) {
-                    sharedAccount.withdraw(ammount);
-                    operationDetails += "$" + String.format("%.2f", ammount) + " withdrawn. \n" +
+                    operationTime = sharedAccount.withdraw(ammount);
+                    operationDetails += "Time: " + operationTime + "\n$" + String.format("%.2f", ammount) + " withdrawn. \n" +
                             "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n\n";
                 } else operationDetails += "You do not have enough money to withdraw!";
             }
             case "deposit" -> {
-                sharedAccount.deposit(ammount);
-                operationDetails += "$" + String.format("%.2f", ammount) + " deposited. \n" +
+                operationTime = sharedAccount.deposit(ammount);
+                operationDetails += "Time: " + operationTime + "\n$" + String.format("%.2f", ammount) + " deposited. \n" +
                         "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n\n";
             }
             default -> {
@@ -59,7 +55,7 @@ public class ClientRequest implements Callable<String> {
             }
         }
 
-        Thread.sleep(2000);
-        return  operationDetails;
+        Thread.sleep(1000);
+        return operationDetails;
     }
 }

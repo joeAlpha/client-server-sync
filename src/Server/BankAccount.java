@@ -1,27 +1,29 @@
 package Server;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 // Shared resource
 public class BankAccount {
     private double balance = 1000.0D;
-    private boolean isHandled = false;
+
+    public String getTime() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        return  dtf.format(now);
+    }
 
     public double getBalance() {
         return this.balance;
     }
 
-    public void withdraw(double withdraw) {
+    public String withdraw(double withdraw) {
         this.balance -= withdraw;
+        return getTime();
     }
 
-    public void deposit(double deposit) {
+    public String deposit(double deposit) {
         this.balance += deposit;
-    }
-
-    public boolean getHandledStatus() {
-        return this.isHandled;
-    }
-
-    public void setHandledStatus(boolean newStatus) {
-        this.isHandled = newStatus;
+        return getTime();
     }
 }

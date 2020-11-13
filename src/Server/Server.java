@@ -5,6 +5,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.*;
 
 // Driver class
@@ -12,13 +14,17 @@ public class Server {
     private final int PORT = 1026;
     private ServerSocket serverSocket;
     private ExecutorService executorService;
-    private DataOutputStream dataOutputStream;
-    private DataInputStream dataInputStream;
     private BankAccount sharedAccount;
 
     public static void main(String args[]) {
         Server server = new Server();
         server.startServer();
+    }
+
+    public String getTime() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        return "[" + dtf.format(now) + "]";
     }
 
     private void startServer() {
@@ -33,45 +39,19 @@ public class Server {
             serverSocket = new ServerSocket(PORT);
             acceptClients(serverSocket);
         } catch (IOException e) {
-            System.err.println("Couldn't listen on port: " + PORT);
+            System.err.println(getTime() + ": Couldn't listen on port: " + PORT);
             System.exit(1);
         }
     }
 
     private void acceptClients(ServerSocket serverSocket) {
-        System.out.println("Server starts port = " + serverSocket.getLocalSocketAddress());
+        System.out.println(getTime() + ": Server starts port = " + serverSocket.getLocalSocketAddress());
 
-        while (true) {
-            try {
-                Socket socket = serverSocket.accept();
-                dataInputStream = new DataInputStream(socket.getInputStream());
-                dataOutputStream = new DataOutputStream(socket.getOutputStream());
-                System.out.println("ATM request from: " + socket.getRemoteSocketAddress());
-
-                ClientRequest request = new ClientRequest(
-                        sharedAccount,
-                        dataInputStream.readUTF(),
-                        dataInputStream.readUTF(),
-                        dataInputStream.readDouble()
-                );
-                // Go to the queue's executor
-                Future<String> taskResult = executorService.submit(request);
-                Thread timeOut = new Thread(new TimeOut(request));
-                timeOut.start();
-
-                String result = "-";
-
-                try {
-                    result = taskResult.get(15, TimeUnit.SECONDS);
-                } catch (TimeoutException | InterruptedException | ExecutionException e) {
-                    System.out.println("Time out reached!");
-                } finally {
-                    dataOutputStream.writeUTF(result);
-                }
-
-            } catch (IOException ex) {
-                System.out.println("ATM connection rejected on port: " + PORT);
-            }
+        // Accepting at least 3 client's connections
+        // in these threads
+        for(int i = 0; i < 3; i++) {
+            new Thread(new Receiver("Receiver " + (i+1), serverSocket, sharedAccount, executorService)).start();
         }
+
     }
 }

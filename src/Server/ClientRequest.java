@@ -1,5 +1,7 @@
 package Server;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Callable;
 
 // Client's request manager
@@ -21,6 +23,12 @@ public class ClientRequest implements Callable<String> {
 
     }
 
+    public String getTime() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        return "[" + dtf.format(now) + "]";
+    }
+
     public String getATM() {
         return this.ATM;
     }
@@ -31,7 +39,7 @@ public class ClientRequest implements Callable<String> {
 
     @Override
     public String call() throws Exception {
-        operationDetails += "Initial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
+        operationDetails += getTime() + "\nInitial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
 
         switch (operation) {
             case "withdraw" -> {
@@ -51,7 +59,7 @@ public class ClientRequest implements Callable<String> {
             }
         }
 
-        Thread.sleep(1000);
-        return operationDetails;
+        Thread.sleep(2000);
+        return  operationDetails;
     }
 }

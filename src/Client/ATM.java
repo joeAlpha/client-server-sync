@@ -32,9 +32,8 @@ public class ATM implements Runnable {
     public void run() {
         try {
             while (true) {
-                if (connectToServer()) {
-                    makeRequest();
-                } else System.out.println(this.id + " : Error setting up the socket with the server");
+                if (connectToServer()) makeRequest();
+                else System.out.println(this.id + " : Error setting up the socket with the server");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -83,8 +82,7 @@ public class ATM implements Runnable {
         dataSocket = new Socket("127.0.0.1", DATA_PORT);
         dataInputStream = new DataInputStream(dataSocket.getInputStream());
         dataOutputStream = new DataOutputStream(dataSocket.getOutputStream());
-        System.out.println(this.id + ": Data socket connected!");
-        return true; // Server free and isn't handled
+        return true;
     }
 
 }

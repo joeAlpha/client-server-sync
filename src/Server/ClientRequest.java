@@ -42,20 +42,19 @@ public class ClientRequest implements Callable<String> {
                 if (sharedAccount.getBalance() > ammount) {
                     operationTime = sharedAccount.withdraw(ammount);
                     operationDetails += "Time: " + operationTime + "\n$" + String.format("%.2f", ammount) + " withdrawn. \n" +
-                            "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n\n";
+                            "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
                 } else operationDetails += "You do not have enough money to withdraw!";
             }
             case "deposit" -> {
                 operationTime = sharedAccount.deposit(ammount);
                 operationDetails += "Time: " + operationTime + "\n$" + String.format("%.2f", ammount) + " deposited. \n" +
-                        "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n\n";
+                        "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
             }
             default -> {
                 operationDetails += "Invalid operation!";
             }
         }
 
-        Thread.sleep(1000);
         return operationDetails;
     }
 }

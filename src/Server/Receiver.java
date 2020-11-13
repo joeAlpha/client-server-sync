@@ -35,9 +35,14 @@ public class Receiver implements Runnable {
     @Override
     public void run() {
         System.out.println(getTime() + ": " + getName() + " listening!");
+        Socket firstSocket = null;
+        try {
+            firstSocket = serverSocket.accept();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         while (true) {
             try {
-                Socket firstSocket = serverSocket.accept();
                 DataInputStream dis = new DataInputStream(firstSocket.getInputStream());
                 DataOutputStream dos = new DataOutputStream(firstSocket.getOutputStream());
                 String atm = dis.readUTF();

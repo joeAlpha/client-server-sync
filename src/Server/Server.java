@@ -63,9 +63,10 @@ public class Server {
         while(true) {
             System.out.println(
                     "\n-------------- REQUESTS STATUS --------------" +
-                            "\n> Clients using the account:" + pool.getActiveCount()+
-                            "\n> Requests completed:" + pool.getCompletedTaskCount()+
-                            "\n> Requests waiting:" + pool.getTaskCount()
+                            "\n> " + getTime() +
+                            "\n> Clients using the account: " + pool.getActiveCount()+
+                            "\n> Requests completed: " + pool.getCompletedTaskCount()+
+                            "\n> Requests waiting: " + pool.getTaskCount()
             );
             Thread.sleep(3000);
         }

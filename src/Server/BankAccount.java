@@ -10,7 +10,7 @@ public class BankAccount {
     public String getTime() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
-        return  dtf.format(now);
+        return dtf.format(now);
     }
 
     public double getBalance() {

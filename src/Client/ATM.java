@@ -26,23 +26,16 @@ public class ATM implements Runnable {
         return this.id;
     }
 
-    public void cancelRequest() {
-        Thread.currentThread().interrupt();
-    }
-
 
     // Thread entry point
     @Override
     public void run() {
         try {
-            if (connectToServer()) {
-                while(true) {
-                    Thread timer = new Thread(this);
-                    timer.start();
+            while (true) {
+                if (connectToServer()) {
                     makeRequest();
-                    timer.interrupt();
-                }
-            } else System.out.println(this.id + " : Error setting up the socket with the server");
+                } else System.out.println(this.id + " : Error setting up the socket with the server");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -50,7 +43,7 @@ public class ATM implements Runnable {
     }
 
     // Calls the withdraw and deposit methods
-    private synchronized void makeRequest() throws IOException {
+    private void makeRequest() throws IOException {
         operation = ThreadLocalRandom.current().nextInt(0, 2);
         switch (operation) {
             case 0 -> {
@@ -66,7 +59,7 @@ public class ATM implements Runnable {
     }
 
     // Withdraws money
-    private synchronized void withdraw(double withdraw) throws IOException {
+    private void withdraw(double withdraw) throws IOException {
         // Sends the operation and the ammount to the server dispatcher
         dataOutputStream.writeUTF(this.id);
         dataOutputStream.writeUTF("withdraw");
@@ -77,7 +70,7 @@ public class ATM implements Runnable {
     }
 
     // Deposits money
-    private synchronized void deposit(double deposit) throws IOException {
+    private void deposit(double deposit) throws IOException {
         // Sends the operation and the ammount to the server dispatcher
         dataOutputStream.writeUTF(this.id);
         dataOutputStream.writeUTF("deposit");
@@ -86,7 +79,7 @@ public class ATM implements Runnable {
     }
 
     // Sets the sockets
-    private synchronized boolean connectToServer() throws IOException {
+    private boolean connectToServer() throws IOException {
         dataSocket = new Socket("127.0.0.1", DATA_PORT);
         dataInputStream = new DataInputStream(dataSocket.getInputStream());
         dataOutputStream = new DataOutputStream(dataSocket.getOutputStream());

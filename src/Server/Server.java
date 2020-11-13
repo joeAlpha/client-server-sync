@@ -46,15 +46,18 @@ public class Server {
                 Socket socket = serverSocket.accept();
                 dataInputStream = new DataInputStream(socket.getInputStream());
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
-                System.out.println("ATM accesing from: " + socket.getRemoteSocketAddress());
+                System.out.println("ATM request from: " + socket.getRemoteSocketAddress());
 
-                // Go to the queue's executor
-                Future<String> taskResult = executorService.submit(new ClientRequest(
+                ClientRequest request = new ClientRequest(
                         sharedAccount,
                         dataInputStream.readUTF(),
                         dataInputStream.readUTF(),
                         dataInputStream.readDouble()
-                ));
+                );
+                // Go to the queue's executor
+                Future<String> taskResult = executorService.submit(request);
+                Thread timeOut = new Thread(new TimeOut(request));
+                timeOut.start();
 
                 String result = "-";
 

@@ -18,26 +18,32 @@ public class ClientRequest implements Callable<String> {
         this.operation = operation;
         this.ammount = ammount;
         operationDetails = "---- OPERATION DETAILS ----\n" + "Client: " + ATM + "\n";
+
+    }
+
+    public String getATM() {
+        return this.ATM;
+    }
+
+    public void cancelRequest() {
+        Thread.currentThread().interrupt();
     }
 
     @Override
     public String call() throws Exception {
+        operationDetails += "Initial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
+
         switch (operation) {
             case "withdraw" -> {
                 if (sharedAccount.getBalance() > ammount) {
                     sharedAccount.withdraw(ammount);
-                    operationDetails += "Initial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n" +
-                            "$" + String.format("%.2f", ammount) + " withdrawn. \n" +
+                    operationDetails += "$" + String.format("%.2f", ammount) + " withdrawn. \n" +
                             "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n\n";
-                } else {
-                    operationDetails += "Initial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n" +
-                            "You do not have enough money to withdraw!";
-                }
+                } else operationDetails += "You do not have enough money to withdraw!";
             }
             case "deposit" -> {
                 sharedAccount.deposit(ammount);
-                operationDetails += "Initial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n" +
-                        "$" + String.format("%.2f", ammount) + " deposited. \n" +
+                operationDetails += "$" + String.format("%.2f", ammount) + " deposited. \n" +
                         "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n\n";
             }
             default -> {
@@ -45,6 +51,7 @@ public class ClientRequest implements Callable<String> {
             }
         }
 
+        Thread.sleep(1000);
         return operationDetails;
     }
 }

@@ -60,6 +60,7 @@ public class Server {
             ).start();
         }
 
+        /*
         while(true) {
             System.out.println(
                     "\n-------------- REQUESTS STATUS --------------" +
@@ -70,5 +71,6 @@ public class Server {
             );
             Thread.sleep(3000);
         }
+         */
     }
 }

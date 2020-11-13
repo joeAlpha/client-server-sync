@@ -1,5 +1,6 @@
 package Server;
 
+import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -59,12 +60,14 @@ public class Receiver implements Runnable {
 
                 // Go to the queue's executor
                 Future<String> taskResult = executorService.submit(request);
-                //System.out.println(getTime() + ": " + operation + " request has been enque from " + atm);
+                System.out.println(getTime() + ": " + operation + " request received from " + atm + " <-");
 
                 String result = "timeout!";
 
                 try {
-                    result = taskResult.get(5, TimeUnit.SECONDS);
+                    result = getTime() + ": " + operation + " request completed for " + atm + "!\n" +
+                            taskResult.get(5, TimeUnit.SECONDS);
+                    System.out.println(result);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {
                     System.out.println(getTime() + ": " + "Time out reached for " + atm + " request!");
                 } finally {

@@ -30,7 +30,7 @@ public class Receiver implements Runnable {
     public synchronized String getTime() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
-        return "[" + dtf.format(now) + "]";
+        return dtf.format(now);
     }
 
     @Override
@@ -55,18 +55,18 @@ public class Receiver implements Runnable {
                         sharedAccount,
                         atm,
                         operation,
-                        ammount
+                        ammount,
+                        getTime()
                 );
 
                 // Go to the queue's executor
                 Future<String> taskResult = executorService.submit(request);
-                System.out.println(getTime() + ": " + operation + " request received from " + atm + " <-");
+                //System.out.println(getTime() + ": " + operation + " request received from " + atm + " <-");
 
                 String result = "timeout!";
 
                 try {
-                    result = getTime() + ": " + operation + " request completed for " + atm + "!\n" +
-                            taskResult.get(5, TimeUnit.SECONDS);
+                    result = taskResult.get(5, TimeUnit.SECONDS);
                     System.out.println(result);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {
                     System.out.println(getTime() + ": " + "Time out reached for " + atm + " request!");

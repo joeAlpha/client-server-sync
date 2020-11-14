@@ -15,13 +15,14 @@ public class Receiver implements Runnable {
     private ExecutorService executorService;
     private String name;
     private Logger logger;
-    private Sting event;
+    private String event;
 
     public Receiver(String name, ServerSocket serverSocket, BankAccount sharedAccount, ExecutorService executorService) {
         this.name = name;
         this.serverSocket = serverSocket;
         this.sharedAccount = sharedAccount;
         this.executorService = executorService;
+        logger = new Logger();
     }
 
     public synchronized String getName() {
@@ -36,7 +37,10 @@ public class Receiver implements Runnable {
 
     @Override
     public void run() {
-        System.out.println(getTime() + ": " + getName() + " listening!");
+        event = getTime() + ": " + getName() + " listening!";
+        logger.writeEvent(event);
+        System.out.println(event);
+
         Socket firstSocket = null;
         try {
             firstSocket = serverSocket.accept();
@@ -70,15 +74,20 @@ public class Receiver implements Runnable {
 
                 try {
                     result = taskResult.get(10, TimeUnit.SECONDS);
+                    logger.writeEvent(result);
                     System.out.println(result);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {
-                    System.out.println(getTime() + ": " + "Time out reached for " + atm + " request!");
+                    event = getTime() + ": " + "Time out reached for " + atm + " request!\n";
+                    logger.writeEvent(event);
+                    System.out.println(event);
                 } finally {
                     dos.writeUTF(result);
                 }
 
             } catch (IOException ex) {
-                System.out.println(getTime() + ": " + "ATM connection rejected on port: " + serverSocket.getLocalPort());
+                event = getTime() + ": " + "ATM connection rejected on port: " + serverSocket.getLocalPort();
+                logger.writeEvent(event);
+                System.out.println(event);
             }
         }
     }

@@ -6,7 +6,7 @@ public class Logger {
     File log;
 
     public Logger() {
-        log = new File("log.txt");
+        log = new File("src/Client/log/log.txt");
     }
 
     public void writeEvent(String event) {

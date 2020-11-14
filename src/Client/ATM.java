@@ -46,7 +46,7 @@ public class ATM implements Runnable {
             if (connectToServer()) {
                 for (int i = 0; i < TRANSACTIONS; i++) {
                     makeRequest();
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                 }
             } else {
                 event = getTime() + ": " + this.id + " -> Error setting up the socket with the server";

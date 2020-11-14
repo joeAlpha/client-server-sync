@@ -1,7 +1,5 @@
 package Server;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Callable;
 
 // Client's request manager
@@ -14,15 +12,19 @@ public class ClientRequest implements Callable<String> {
     private String ATM;
     private String operationDetails;
     private String arriveTime;
+    private Logger logger;
+    private String event;
 
     public ClientRequest(BankAccount sharedAccount, String ATM, String operation, double ammount, String arriveTime) {
+        logger = new Logger();
+        event = "";
+
         this.sharedAccount = sharedAccount;
         this.ATM = ATM;
         this.operation = operation;
         this.ammount = ammount;
         this.arriveTime = arriveTime;
         operationDetails = "---- OPERATION DETAILS ----\n" + "Client: " + ATM + "\n";
-
     }
 
     @Override
@@ -49,6 +51,7 @@ public class ClientRequest implements Callable<String> {
             }
         }
 
+        logger.writeEvent(operationDetails);
         Thread.sleep(3000);
         return operationDetails;
     }

@@ -15,6 +15,8 @@ public class Server {
     private ExecutorService executorService;
     private ThreadPoolExecutor pool;
     private BankAccount sharedAccount;
+    private Logger logger;
+    String event;
 
     public static void main(String args[]) {
         Server server = new Server();
@@ -29,6 +31,7 @@ public class Server {
 
     private void startServer() {
         sharedAccount = new BankAccount();
+        logger = new Logger();
 
         // Only one thread will be letting the access to the shared
         // account
@@ -42,7 +45,9 @@ public class Server {
             serverSockets[2] = new ServerSocket(1028);
             acceptClients();
         } catch (IOException | InterruptedException e) {
-            System.err.println(getTime() + ": Couldn't listen on port: ");
+            event = getTime() + ": Couldn't listen on port: ";
+            System.err.println(event);
+            logger.writeEvent(event);
             System.exit(1);
         }
     }
@@ -59,18 +64,5 @@ public class Server {
                             pool)
             ).start();
         }
-
-        /*
-        while(true) {
-            System.out.println(
-                    "\n-------------- REQUESTS STATUS --------------" +
-                            "\n> " + getTime() +
-                            "\n> Clients using the account: " + pool.getActiveCount()+
-                            "\n> Requests completed: " + pool.getCompletedTaskCount()+
-                            "\n> Requests waiting: " + pool.getTaskCount()
-            );
-            Thread.sleep(3000);
-        }
-         */
     }
 }

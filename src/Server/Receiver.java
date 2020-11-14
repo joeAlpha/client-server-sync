@@ -1,6 +1,5 @@
 package Server;
 
-import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,6 +14,8 @@ public class Receiver implements Runnable {
     private BankAccount sharedAccount;
     private ExecutorService executorService;
     private String name;
+    private Logger logger;
+    private Sting event;
 
     public Receiver(String name, ServerSocket serverSocket, BankAccount sharedAccount, ExecutorService executorService) {
         this.name = name;
@@ -61,12 +62,14 @@ public class Receiver implements Runnable {
 
                 // Go to the queue's executor
                 Future<String> taskResult = executorService.submit(request);
-                //System.out.println(getTime() + ": " + operation + " request received from " + atm + " <-");
 
-                String result = "timeout!";
+                // Timeout default message case
+                String result =  "---- TIME OUT ----\n" + "Client: " + atm + "\nInitial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n" +
+                        "Arrive time: " + getTime() + "\nOperation: $" + String.format("%.2f", ammount) + " NOT deposited. \n" +
+                        "Final balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n";
 
                 try {
-                    result = taskResult.get(5, TimeUnit.SECONDS);
+                    result = taskResult.get(10, TimeUnit.SECONDS);
                     System.out.println(result);
                 } catch (TimeoutException | InterruptedException | ExecutionException e) {
                     System.out.println(getTime() + ": " + "Time out reached for " + atm + " request!");

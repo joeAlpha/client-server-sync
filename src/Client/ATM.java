@@ -1,6 +1,5 @@
 package Client;
 
-import Server.BankAccount;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -9,7 +8,6 @@ import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.ThreadPoolExecutor;
 
 // TODO: register all request and connections to console
 public class ATM implements Runnable {
@@ -21,10 +19,14 @@ public class ATM implements Runnable {
     public int operation;
     private String id;
     private int port;
+    String event;
+    Logger logger;
 
     public ATM(String id, int port) {
         this.id = id;
         this.port = port;
+        event = "";
+        logger = new Logger();
     }
 
     public String getId() {
@@ -42,11 +44,15 @@ public class ATM implements Runnable {
     public void run() {
         try {
             if (connectToServer()) {
-                while (true) {
+                for (int i = 0; i < TRANSACTIONS; i++) {
                     makeRequest();
-                    Thread.sleep(3000);
+                    Thread.sleep(1000);
                 }
-            } else System.out.println(this.id + " : Error setting up the socket with the server");
+            } else {
+                event = getTime() + ": " + this.id + " -> Error setting up the socket with the server";
+                System.out.println(event);
+                logger.writeEvent(event);
+            }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -65,20 +71,28 @@ public class ATM implements Runnable {
                 deposit = ThreadLocalRandom.current().nextDouble(5, 21);
                 deposit(deposit);
             }
-            default -> throw new IllegalStateException(this.id + ": Unexpected value: " + operation);
+            default -> {
+                event = getTime() + ": " + this.id + " -> Unexpected value: " + operation;
+                logger.writeEvent(event);
+                throw new IllegalStateException(event);
+            }
         }
     }
 
     // Withdraws money
     private synchronized void withdraw(double withdraw) throws IOException {
-        // Sends the operation and the ammount to the server dispatcher
         dataOutputStream.writeUTF(this.id);
         dataOutputStream.writeUTF("withdraw");
         dataOutputStream.writeDouble(withdraw);
-        System.out.println(getTime() + ": " + id + " sent a withdraw request"); // Connected
 
-        // Response
-        System.out.println(dataInputStream.readUTF());
+        // Log event
+        event = getTime() + ": " + id + " sent a withdraw request\n";
+        System.out.println(event);
+        logger.writeEvent(event);
+
+        event = dataInputStream.readUTF();
+        System.out.println(event);
+        logger.writeEvent(event);
     }
 
     // Deposits money
@@ -87,8 +101,14 @@ public class ATM implements Runnable {
         dataOutputStream.writeUTF(this.id);
         dataOutputStream.writeUTF("deposit");
         dataOutputStream.writeDouble(deposit);
-        System.out.println(getTime() + ": " + id + " sent a deposit request"); // Connected
-        System.out.println(dataInputStream.readUTF()); // Dispatched
+
+        event = getTime() + ": " + id + " sent a deposit request\n";
+        System.out.println(event);
+        logger.writeEvent(event);
+
+        event = dataInputStream.readUTF();
+        System.out.println(event);
+        logger.writeEvent(event);
     }
 
     // Sets the sockets
@@ -96,7 +116,11 @@ public class ATM implements Runnable {
         dataSocket = new Socket("127.0.0.1", port);
         dataInputStream = new DataInputStream(dataSocket.getInputStream());
         dataOutputStream = new DataOutputStream(dataSocket.getOutputStream());
-        System.out.println(getTime() + ": " + id + " -> connected on port: " + dataSocket.getRemoteSocketAddress()); // Connected
+
+        event = getTime() + ": " + id + " -> connected on port: " + dataSocket.getRemoteSocketAddress(); // Connected
+        System.out.println(event);
+        logger.writeEvent(event);
+
         return true;
     }
 

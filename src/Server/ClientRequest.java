@@ -25,15 +25,6 @@ public class ClientRequest implements Callable<String> {
 
     }
 
-
-    public String getATM() {
-        return this.ATM;
-    }
-
-    public void cancelRequest() {
-        Thread.currentThread().interrupt();
-    }
-
     @Override
     public String call() throws Exception {
         operationDetails += "Initial balance: $" + String.format("%.2f", sharedAccount.getBalance()) + "\n" +
@@ -58,6 +49,7 @@ public class ClientRequest implements Callable<String> {
             }
         }
 
+        Thread.sleep(3000);
         return operationDetails;
     }
 }

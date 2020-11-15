@@ -41,16 +41,16 @@ public class Receiver implements Runnable {
         logger.writeEvent(event);
         System.out.println(event);
 
-        Socket firstSocket = null;
-        try {
-            firstSocket = serverSocket.accept();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         while (true) {
             try {
-                DataInputStream dis = new DataInputStream(firstSocket.getInputStream());
-                DataOutputStream dos = new DataOutputStream(firstSocket.getOutputStream());
+                Socket clientSocket = serverSocket.accept();
+                DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+                DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
+
+                // Notifies to the client that the connection
+                // was made.
+                dos.writeBoolean(true);
+
                 String atm = dis.readUTF();
                 String operation = dis.readUTF();
                 double ammount = dis.readDouble();
@@ -82,6 +82,9 @@ public class Receiver implements Runnable {
                     System.out.println(event);
                 } finally {
                     dos.writeUTF(result);
+                    dos.close();
+                    dis.close();
+                    clientSocket.close();
                 }
 
             } catch (IOException ex) {

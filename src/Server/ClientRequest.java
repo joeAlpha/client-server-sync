@@ -52,7 +52,7 @@ public class ClientRequest implements Callable<String> {
         }
 
         logger.writeEvent(operationDetails);
-        Thread.sleep(3000);
+        Thread.sleep(2000);
         return operationDetails;
     }
 }

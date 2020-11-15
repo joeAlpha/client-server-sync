@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ATM implements Runnable {
     public final int TRANSACTIONS = 10;
     public double deposit, withdraw;
-    private Socket dataSocket;
+    private Socket socket;
     private DataInputStream dataInputStream;
     private DataOutputStream dataOutputStream;
     public int operation;
@@ -33,6 +33,16 @@ public class ATM implements Runnable {
         return this.id;
     }
 
+    public void cancelConnection() throws IOException {
+        this.dataInputStream.close();
+        this.dataOutputStream.close();
+        this.socket.close();
+
+        event = getTime() + ": " + getId() + " -> disconnected!\n";
+        System.out.println(event);
+        logger.writeEvent(event);
+    }
+
     public synchronized String getTime() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
         LocalDateTime now = LocalDateTime.now();
@@ -43,20 +53,16 @@ public class ATM implements Runnable {
     @Override
     public void run() {
         try {
-            if (connectToServer()) {
-                for (int i = 0; i < TRANSACTIONS; i++) {
-                    makeRequest();
-                    Thread.sleep(2000);
-                }
-            } else {
-                event = getTime() + ": " + this.id + " -> Error setting up the socket with the server";
-                System.out.println(event);
-                logger.writeEvent(event);
+            for (int i = 0; i < TRANSACTIONS; i++) {
+                connectToServer();
+                makeRequest();
+                dataOutputStream.flush();
+                cancelConnection();
+                Thread.sleep(1000);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
-
     }
 
     // Calls the withdraw and deposit methods
@@ -112,16 +118,28 @@ public class ATM implements Runnable {
     }
 
     // Sets the sockets
-    private synchronized boolean connectToServer() throws IOException {
-        dataSocket = new Socket("127.0.0.1", port);
-        dataInputStream = new DataInputStream(dataSocket.getInputStream());
-        dataOutputStream = new DataOutputStream(dataSocket.getOutputStream());
+    private synchronized void connectToServer() throws IOException {
+        socket = new Socket("127.0.0.1", port);
+        dataInputStream = new DataInputStream(socket.getInputStream());
+        dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-        event = getTime() + ": " + id + " -> connected on port: " + dataSocket.getRemoteSocketAddress(); // Connected
-        System.out.println(event);
-        logger.writeEvent(event);
+        // Timer starts
+        Timer timer = new Timer(this, 20);
+        Thread timerThread = new Thread(timer);
+        timerThread.start();
 
-        return true;
+        // Waits for server response
+        if (dataInputStream.readBoolean()) {
+            timer.changeRunningStatus(false); // Cancels the time out
+            timerThread.interrupt();
+            event = getTime() + ": " + id + " -> connected on port: " + socket.getRemoteSocketAddress(); // Connected
+            System.out.println(event);
+            logger.writeEvent(event);
+        } else {
+            event = getTime() + ": " + this.id + " -> Error setting up the socket with the server";
+            System.out.println(event);
+            logger.writeEvent(event);
+        }
     }
 
 }

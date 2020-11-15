@@ -9,7 +9,7 @@ public class Logger {
         log = new File("src/Client/log/log.txt");
     }
 
-    public void writeEvent(String event) {
+    public synchronized void writeEvent(String event) {
         try (FileWriter fw = new FileWriter(log, true);
              BufferedWriter bw = new BufferedWriter(fw);
              PrintWriter printerOut = new PrintWriter(bw)) {

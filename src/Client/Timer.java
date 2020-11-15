@@ -19,7 +19,7 @@ public class Timer implements Runnable {
         running = true;
     }
 
-    public void changeRunningStatus(boolean status) {
+    public synchronized void changeRunningStatus(boolean status) {
         this.running = status;
     }
 
@@ -51,7 +51,5 @@ public class Timer implements Runnable {
                 //e.printStackTrace();
             }
         }
-
-        System.out.println(client.getId() + " timer finish!");
     }
 }

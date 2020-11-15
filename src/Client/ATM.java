@@ -29,11 +29,11 @@ public class ATM implements Runnable {
         logger = new Logger();
     }
 
-    public String getId() {
+    public synchronized String getId() {
         return this.id;
     }
 
-    public void cancelConnection() throws IOException {
+    public synchronized void cancelConnection() throws IOException {
         this.dataInputStream.close();
         this.dataOutputStream.close();
         this.socket.close();
@@ -132,11 +132,11 @@ public class ATM implements Runnable {
         if (dataInputStream.readBoolean()) {
             timer.changeRunningStatus(false); // Cancels the time out
             timerThread.interrupt();
-            event = getTime() + ": " + id + " -> connected on port: " + socket.getRemoteSocketAddress(); // Connected
+            event = getTime() + ": " + id + " -> connected on port: " + socket.getRemoteSocketAddress() + "\n"; // Connected
             System.out.println(event);
             logger.writeEvent(event);
         } else {
-            event = getTime() + ": " + this.id + " -> Error setting up the socket with the server";
+            event = getTime() + ": " + this.id + " -> Error setting up the socket with the server\n";
             System.out.println(event);
             logger.writeEvent(event);
         }
